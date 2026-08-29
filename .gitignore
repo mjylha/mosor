@@ -4,3 +4,4 @@
 .vscode/launch.json
 .vscode/ipch
 report.*.json
+include/victron_device_settings.local.h

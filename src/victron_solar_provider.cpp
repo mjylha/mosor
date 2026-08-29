@@ -1,4 +1,5 @@
 #include "victron_solar_provider.h"
+#include "victron_device_settings.h"
 
 VictronSolarProvider* VictronSolarProvider::activeProvider_ = nullptr;
 
@@ -12,9 +13,9 @@ bool VictronSolarProvider::begin() {
   victron_.setCallback(onData);
 
   configured_ = victron_.addDevice(
-      "SmartSolar",
-      "E8:DB:84:1C:FF:7A",
-      "0123456789abcdef0123456789abcdef",
+      MOSOR_VICTRON_DEVICE_NAME,
+      MOSOR_VICTRON_MAC_ADDRESS,
+      MOSOR_VICTRON_ENCRYPTION_KEY,
       DEVICE_TYPE_SOLAR_CHARGER);
   return configured_;
 }

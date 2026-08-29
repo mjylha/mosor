@@ -21,7 +21,15 @@ environment:
 pio run -e esp32dev-victron
 ```
 
-Before flashing that environment, replace the device name, MAC address, and
-encryption key in `src/solar_provider.cpp`. Displays, transmission, and other
-consumers can be added around `SolarSnapshot` without changing provider
+Before flashing that environment, create a local settings file that is ignored by
+git:
+
+```sh
+cp include/victron_device_settings.example.h include/victron_device_settings.local.h
+```
+
+Then edit `include/victron_device_settings.local.h` and replace the device name,
+MAC address, and encryption key with your own values. The project will prefer the
+local file automatically when flashing the Victron build. Displays, transmission,
+and other consumers can be added around `SolarSnapshot` without changing provider
 selection.
