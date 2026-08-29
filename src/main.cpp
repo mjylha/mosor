@@ -1,56 +1,35 @@
 #include <Arduino.h>
-#include "VictronBLE.h"
+#include "solar_provider.h"
 
-VictronBLE victron;
+#if defined(SOLAR_PROVIDER_VICTRON)
+#include "victron_solar_provider.h"
+VictronSolarProvider solar;
+#else
+#include "mock_solar_provider.h"
+MockSolarProvider solar(42);
+#endif
 
-// Callback — receives a VictronDevice*, switch on deviceType
-void onVictronData(const VictronDevice *dev)
-{
-
-Serial.printf("Solar %s: %.2fV %.2fA %dW\n",
-                  dev->name,
-                  dev->solar.batteryVoltage,
-                  dev->solar.batteryCurrent,
-                  (int)dev->solar.panelPower);
-
-  if (dev->deviceType == DEVICE_TYPE_SOLAR_CHARGER)
-  {
-    Serial.printf("Solar %s: %.2fV %.2fA %dW\n",
-                  dev->name,
-                  dev->solar.batteryVoltage,
-                  dev->solar.batteryCurrent,
-                  (int)dev->solar.panelPower);
-  }
-}
-
-void setup()
-{
+void setup() {
   Serial.begin(115200);
-  Serial.println("Starting up victronBLE monitor...");
+  Serial.println("Starting solar monitor...");
 
-  victron.begin(5); // 5 second scan duration
-  victron.setCallback(onVictronData);
-
-  // Add your device (replace with your MAC and key)
-  boolean success = victron.addDevice(
-      "SmartSolar-Mock",                  // Name
-      "E8:DB:84:1C:FF:7A",                // MAC address
-      "0123456789abcdef0123456789abcdef" // Encryption key
-      // DEVICE_TYPE_SOLAR_CHARGER           // Device type (optional, auto-detected)
-  );
-
-  if (!success)
-  {
-    Serial.println("Failed to add device. Check MAC and key.");
+  if (!solar.begin()) {
+    Serial.println("Failed to initialize solar provider.");
   }
-  else{
-    Serial.println("Device added successfully. Awaiting data...");
-  }
-
 }
 
-void loop()
-{
-  victron.loop(); // Non-blocking, returns immediately
-  delay(100); 
+void loop() {
+  solar.update();
+
+  SolarSnapshot snapshot;
+  if (solar.latest(snapshot)) {
+    Serial.printf("Solar: %.2fV %.2fA %.0fW state:%u status:%u\n",
+                  snapshot.batteryVoltage,
+                  snapshot.batteryCurrent,
+                  snapshot.panelPower,
+                  snapshot.chargerState,
+                  static_cast<unsigned>(snapshot.status));
+  }
+
+  delay(100);
 }
