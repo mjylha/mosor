@@ -1,5 +1,15 @@
 #pragma once
 
+// This file defines the default Victron configuration used by the project.
+// If you want to override any of these values for your own device, copy the
+// example header to `victron_device_settings.local.h` and set your own values
+// there. The local file is preferred automatically and is git-ignored.
+//
+// Precedence order:
+//   1. MOSOR_VICTRON_SETTINGS compile definition
+//   2. include/victron_device_settings.local.h
+//   3. built-in default values below
+
 #if defined(MOSOR_VICTRON_SETTINGS)
 #include MOSOR_VICTRON_SETTINGS
 #elif __has_include("victron_device_settings.local.h")

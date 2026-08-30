@@ -28,8 +28,10 @@ git:
 cp include/victron_device_settings.example.h include/victron_device_settings.local.h
 ```
 
-Then edit `include/victron_device_settings.local.h` and replace the device name,
-MAC address, and encryption key with your own values. The project will prefer the
-local file automatically when flashing the Victron build. Displays, transmission,
-and other consumers can be added around `SolarSnapshot` without changing provider
-selection.
+This example file is the template: when copied to
+`include/victron_device_settings.local.h`, it takes precedence over the default
+settings in `include/victron_device_settings.h`. Then edit the local file and
+replace the device name, MAC address, and encryption key with your own values.
+The project will prefer the local file automatically when flashing the Victron
+build. Displays, transmission, and other consumers can be added around
+`SolarSnapshot` without changing provider selection.
