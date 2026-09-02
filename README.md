@@ -51,5 +51,11 @@ This example file is the template: when copied to
 settings in `include/victron_device_settings.h`. Then edit the local file and
 replace the device name, MAC address, and encryption key with your own values.
 The project will prefer the local file automatically when flashing the Victron
-build. Displays, transmission, and other consumers can be added around
-`SolarSnapshot` without changing provider selection.
+build.
+
+When `MQTT_ENABLED` is `"1"` or `"true"`, the firmware connects to
+`WIFI_SSID`/`WIFI_PASSWORD` and publishes a retained JSON `SolarSnapshot` every
+five seconds to `<MQTT_TOPIC_PREFIX>/solar`. Set `MQTT_URL_IS_TLS` to `"1"` or
+`"true"` for TLS (the configured broker certificate is not validated), or to
+`"0"` for plain MQTT. `MQTT_URL` accepts `host:port`, `mqtt://host:port`, or
+`mqtts://host:port`; ports default to 1883 or 8883 based on the TLS setting.
