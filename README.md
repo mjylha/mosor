@@ -14,6 +14,24 @@ pio device monitor
 The mock produces a smooth day/night curve with bounded jitter. Its seed is
 set in `src/main.cpp`, so the same run can be reproduced.
 
+## OLED display
+
+The firmware displays the current `SolarSnapshot` on a 0.96 inch I2C
+128x64 SSD1306 OLED. The default I2C address is `0x3C`.
+
+Connect the display to an ESP32 development board as follows:
+
+| OLED pin | ESP32 pin |
+| --- | --- |
+| VCC | 3.3V |
+| GND | GND |
+| SDA | GPIO 21 |
+| SCL | GPIO 22 |
+
+The display shows battery voltage, battery current, panel power, charger state,
+error code, data status, and the age of the latest reading. If the OLED is not
+connected, the firmware continues to report readings over serial.
+
 When connected to the real SmartSolar device, build the Victron adapter
 environment:
 
