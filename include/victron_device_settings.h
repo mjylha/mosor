@@ -18,4 +18,14 @@
 #define MOSOR_VICTRON_DEVICE_NAME "SmartSolar"
 #define MOSOR_VICTRON_MAC_ADDRESS "E8:DB:84:1C:FF:7A"
 #define MOSOR_VICTRON_ENCRYPTION_KEY "0123456789abcdef0123456789abcdef"
+#define MQTT_ENABLED "0"
+#define WIFI_SSID ""
+#define WIFI_PASSWORD ""
+#define MQTT_URL ""
+#define MQTT_URL_IS_TLS "1"
+#define MQTT_TOPIC_PREFIX "mokki1/"
+#define MQTT_USER ""
+#define MQTT_PASSWORD ""
+
+
 #endif
