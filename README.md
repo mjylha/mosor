@@ -177,6 +177,18 @@ by charging current, load, temperature, and surface charge, so it should not be
 treated as a precision state-of-charge measurement. The display can also show
 stale data when the last valid Victron reading is more than ten seconds old.
 
+### OLED longevity
+
+For an OLED that remains powered continuously, some uneven pixel aging or
+image retention is possible over a long period because the layout contains
+static, high-contrast text and graphics. Mosor periodically shifts the
+framebuffer by one pixel and briefly turns the display off to reduce wear. These
+measures reduce the risk but cannot prevent OLED aging completely.
+
+For installations that must run for years, also consider lowering display
+brightness, switching the display off when it is not being viewed, or using a
+display module designed for continuous-duty signage.
+
 ## Troubleshooting
 
 ### Build or upload problems

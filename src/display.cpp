@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <Adafruit_SSD1306.h>
 #include <Wire.h>
+#include <cstring>
 
 #include "display.h"
 
@@ -11,10 +12,19 @@ constexpr uint8_t displayAddress = 0x3C;
 constexpr int i2cSda = 21;
 constexpr int i2cScl = 22;
 constexpr uint32_t recoveryInterval = 300000;
+constexpr uint32_t pixelShiftInterval = 60000;
+constexpr uint32_t blankingInterval = 300000;
+constexpr uint32_t blankingDuration = 2000;
+constexpr size_t displayBufferSize = displayWidth * displayHeight / 8;
 
 Adafruit_SSD1306 display(displayWidth, displayHeight, &Wire, -1);
 bool displayReady = false;
+bool displayBlanked = false;
 uint32_t lastRecovery = 0;
+uint32_t lastPixelShift = 0;
+uint32_t lastBlanking = 0;
+uint32_t blankingStarted = 0;
+uint8_t shiftedBuffer[displayBufferSize];
 
 const char* statusName(SolarDataStatus status) {
   switch (status) {
@@ -68,6 +78,42 @@ uint8_t estimatedBatteryPercent(float voltage) {
   }
 
   return 100;
+}
+
+void shiftDisplayBuffer(uint8_t xOffset, uint8_t yOffset) {
+  uint8_t* buffer = display.getBuffer();
+  memset(shiftedBuffer, 0, sizeof(shiftedBuffer));
+
+  for (uint8_t y = 0; y < displayHeight - yOffset; ++y) {
+    for (uint8_t x = 0; x < displayWidth - xOffset; ++x) {
+      const size_t sourceIndex = x + (y / 8) * displayWidth;
+      if ((buffer[sourceIndex] & (1 << (y & 7))) != 0) {
+        const uint8_t shiftedY = y + yOffset;
+        const size_t targetIndex =
+            (x + xOffset) + (shiftedY / 8) * displayWidth;
+        shiftedBuffer[targetIndex] |= 1 << (shiftedY & 7);
+      }
+    }
+  }
+
+  memcpy(buffer, shiftedBuffer, sizeof(shiftedBuffer));
+}
+
+void maintainDisplayProtection(uint32_t now) {
+  if (displayBlanked) {
+    if (now - blankingStarted >= blankingDuration) {
+      display.ssd1306_command(SSD1306_DISPLAYON);
+      displayBlanked = false;
+      lastBlanking = now;
+    }
+    return;
+  }
+
+  if (now - lastBlanking >= blankingInterval) {
+    display.ssd1306_command(SSD1306_DISPLAYOFF);
+    displayBlanked = true;
+    blankingStarted = now;
+  }
 }
 
 
@@ -160,6 +206,12 @@ void drawBatteryAddSolarInput(const SolarSnapshot& snapshot, bool networkProblem
     display.print((millis() - snapshot.updatedAt) / 1000);
     display.println(" s");
   }
+  const uint32_t now = millis();
+  if (now - lastPixelShift >= pixelShiftInterval) {
+    lastPixelShift = now;
+    const uint8_t shift = (now / pixelShiftInterval) % 2;
+    shiftDisplayBuffer(shift, shift);
+  }
   display.display();
 
   
@@ -196,6 +248,9 @@ bool initialize() {
   display.setTextSize(1);
   display.setTextColor(SSD1306_WHITE);
   display.display();
+  displayBlanked = false;
+  lastPixelShift = millis();
+  lastBlanking = lastPixelShift;
   Serial.println("OLED display initialized.");
   return true;
 }
@@ -210,6 +265,7 @@ void displayBegin() {
 
 void displayMaintain() {
   const uint32_t now = millis();
+  maintainDisplayProtection(now);
   if (now - lastRecovery >= recoveryInterval) {
     lastRecovery = now;
     initialize();
@@ -218,6 +274,9 @@ void displayMaintain() {
 
 void displayShow(const SolarSnapshot& snapshot, bool networkProblem) {
   if (!displayReady) {
+    return;
+  }
+  if (displayBlanked) {
     return;
   }
 
