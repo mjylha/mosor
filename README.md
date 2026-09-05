@@ -32,18 +32,6 @@ The display shows battery voltage, battery current, panel power, charger state,
 error code, data status, and the age of the latest reading. If the OLED is not
 connected, the firmware continues to report readings over serial.
 
-At startup, the firmware checks whether an I2C device acknowledges at `0x3C`.
-`No I2C device acknowledged` usually indicates a power, ground, SDA/SCL,
-connector, address-selection, or failed-module problem. If the address
-acknowledges but SSD1306 initialization fails, check that the module is really
-an SSD1306-compatible 128x64 display.
-
-For a black display, first power the module from 3.3 V, verify common ground
-and the GPIO 21/22 connections, and inspect the header and solder joints. A
-replacement display working on the same board, wiring, firmware, and supply
-is strong evidence that the original module failed. If the original still
-does not acknowledge at `0x3C` after those checks, software cannot repair the
-module; replacement is the practical remedy.
 
 When connected to the real SmartSolar device, build the Victron adapter
 environment:
@@ -72,3 +60,26 @@ five seconds to `<MQTT_TOPIC_PREFIX>/solar`. Set `MQTT_URL_IS_TLS` to `"1"` or
 `"true"` for TLS (the configured broker certificate is not validated), or to
 `"0"` for plain MQTT. `MQTT_URL` accepts `host:port`, `mqtt://host:port`, or
 `mqtts://host:port`; ports default to 1883 or 8883 based on the TLS setting.
+
+## Display troubleshooting and details
+
+At startup, the firmware checks whether an I2C device acknowledges at `0x3C`.
+`No I2C device acknowledged` usually indicates a power, ground, SDA/SCL,
+connector, address-selection, or failed-module problem. If the address
+acknowledges but SSD1306 initialization fails, check that the module is really
+an SSD1306-compatible 128x64 display.
+
+For a black display, first power the module from 3.3 V, verify common ground
+and the GPIO 21/22 connections, and inspect the header and solder joints. A
+replacement display working on the same board, wiring, firmware, and supply
+is strong evidence that the original module failed. If the original still
+does not acknowledge at `0x3C` after those checks, software cannot repair the
+module; replacement is the practical remedy.
+
+The firmware sets a 50 ms I2C timeout and re-sends the SSD1306 initialization
+sequence every five minutes. This can recover a display controller that has
+stopped responding while the ESP32 and MQTT connection remain healthy. The
+current wiring does not use the OLED reset pin; for installations where the
+display must recover from severe electrical disturbances, wiring the module's
+reset input to an ESP32 GPIO and passing that pin to the SSD1306 constructor
+provides a stronger hardware reset.

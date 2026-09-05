@@ -17,6 +17,7 @@ constexpr int i2cScl = 22;
 constexpr uint32_t wifiRetryInterval = 10000;
 constexpr uint32_t mqttRetryInterval = 5000;
 constexpr uint32_t mqttPublishInterval = 5000;
+constexpr uint32_t displayRecoveryInterval = 300000;
 
 Adafruit_SSD1306 display(displayWidth, displayHeight, &Wire, -1);
 bool displayReady = false;
@@ -30,6 +31,7 @@ bool mqttReady = false;
 uint32_t lastWifiAttempt = 0;
 uint32_t lastMqttAttempt = 0;
 uint32_t lastMqttPublish = 0;
+uint32_t lastDisplayRecovery = 0;
 
 const char* statusName(SolarDataStatus status) {
   switch (status) {
@@ -48,6 +50,29 @@ const char* statusName(SolarDataStatus status) {
 bool i2cDevicePresent(uint8_t address) {
   Wire.beginTransmission(address);
   return Wire.endTransmission() == 0;
+}
+
+bool initializeDisplay() {
+  if (!i2cDevicePresent(displayAddress)) {
+    displayReady = false;
+    Serial.printf("No I2C device acknowledged at OLED address 0x%02X.\n",
+                  displayAddress);
+    return false;
+  }
+
+  displayReady = display.begin(SSD1306_SWITCHCAPVCC, displayAddress,
+                               true, false);
+  if (!displayReady) {
+    Serial.println("OLED controller acknowledged, but SSD1306 initialization failed.");
+    return false;
+  }
+
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(SSD1306_WHITE);
+  display.display();
+  Serial.println("OLED display initialized.");
+  return true;
 }
 
 void showSnapshot(const SolarSnapshot& snapshot) {
@@ -216,21 +241,9 @@ void setup() {
   configureMqtt();
 
   Wire.begin(i2cSda, i2cScl);
-  if (!i2cDevicePresent(displayAddress)) {
-    Serial.printf("No I2C device acknowledged at OLED address 0x%02X.\n",
-                  displayAddress);
-  } else {
-    displayReady = display.begin(SSD1306_SWITCHCAPVCC, displayAddress);
-    if (!displayReady) {
-      Serial.println("OLED controller acknowledged, but SSD1306 initialization failed.");
-    } else {
-      display.clearDisplay();
-      display.setTextSize(1);
-      display.setTextColor(SSD1306_WHITE);
-      display.display();
-      Serial.println("OLED display initialized.");
-    }
-  }
+  Wire.setTimeOut(50);
+  initializeDisplay();
+  lastDisplayRecovery = millis();
 
   if (!solar.begin()) {
     Serial.println("Failed to initialize solar provider.");
@@ -245,6 +258,12 @@ void setup() {
 void loop() {
   solar.update();
   maintainMqtt();
+
+  const uint32_t now = millis();
+  if (now - lastDisplayRecovery >= displayRecoveryInterval) {
+    lastDisplayRecovery = now;
+    initializeDisplay();
+  }
 
   SolarSnapshot snapshot;
   if (solar.latest(snapshot)) {
