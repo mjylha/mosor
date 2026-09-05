@@ -11,14 +11,10 @@ constexpr uint8_t displayAddress = 0x3C;
 constexpr int i2cSda = 21;
 constexpr int i2cScl = 22;
 constexpr uint32_t recoveryInterval = 300000;
-constexpr float batteryEmptyVoltage = 12.0f;
-constexpr float batteryFullVoltage = 14.0f;
-
 
 Adafruit_SSD1306 display(displayWidth, displayHeight, &Wire, -1);
 bool displayReady = false;
 uint32_t lastRecovery = 0;
-
 
 const char* statusName(SolarDataStatus status) {
   switch (status) {
@@ -34,36 +30,63 @@ const char* statusName(SolarDataStatus status) {
   }
 }
 
+struct BatteryVoltagePoint {
+  float voltage;
+  uint8_t percent;
+};
+
+// Voltage is a poor proxy for SOC while charging, but this curve follows the
+// battery monitor's high-voltage plateau better than a linear conversion.
+constexpr BatteryVoltagePoint batteryCurve[] = {
+    {12.0f, 0},   {12.2f, 15}, {12.4f, 35}, {12.6f, 55},
+    {12.8f, 72},  {13.0f, 86}, {13.2f, 95}, {13.4f, 98},
+    {13.6f, 100},
+};
+
 uint8_t estimatedBatteryPercent(float voltage) {
-  const float range = batteryFullVoltage - batteryEmptyVoltage;
-  if (voltage <= batteryEmptyVoltage) {
+  if (voltage <= batteryCurve[0].voltage) {
     return 0;
   }
-  if (voltage >= batteryFullVoltage) {
+  constexpr size_t pointCount = sizeof(batteryCurve) / sizeof(batteryCurve[0]);
+  if (voltage >= batteryCurve[pointCount - 1].voltage) {
     return 100;
   }
-  return static_cast<uint8_t>(
-      ((voltage - batteryEmptyVoltage) / range) * 100.0f + 0.5f);
+
+  for (size_t i = 1; i < pointCount; ++i) {
+    const BatteryVoltagePoint& lower = batteryCurve[i - 1];
+    const BatteryVoltagePoint& upper = batteryCurve[i];
+    if (voltage <= upper.voltage) {
+      const float linearFraction =
+          (voltage - lower.voltage) / (upper.voltage - lower.voltage);
+      // Ease between calibration points so the estimate does not change at a
+      // constant rate throughout each voltage interval.
+      const float fraction =
+          linearFraction * linearFraction * (3.0f - 2.0f * linearFraction);
+      return static_cast<uint8_t>(
+          lower.percent + (upper.percent - lower.percent) * fraction + 0.5f);
+    }
+  }
+
+  return 100;
 }
 
 
 void drawBatteryAddSolarInput(const SolarSnapshot& snapshot) {
   const uint8_t percent = estimatedBatteryPercent(snapshot.batteryVoltage);
+  
+  constexpr int bigRowheight = 14;
+  const int sunX = 5;
+  const int sunY = 5;
+
   constexpr int gaugeX = 1;
-  constexpr int gaugeY = 1;
   constexpr int gaugeWidth = 50;
-  constexpr int gaugeHeight = 14;
+  const int gaugeY = bigRowheight + 2;
+  
 
-  display.drawRect(gaugeX, gaugeY, gaugeWidth, gaugeHeight, SSD1306_WHITE);
-  display.fillRect(gaugeX + gaugeWidth, gaugeY + 4, 3, 6, SSD1306_WHITE);
-  const int fillWidth = (gaugeWidth - 4) * percent / 100;
-  if (fillWidth > 0) {
-    display.fillRect(gaugeX + 2, gaugeY + 2, fillWidth, gaugeHeight - 4,
-                     SSD1306_WHITE);
-  }
+  //const int sunX = gaugeX + gaugeWidth + 18;
+  //const int sunY = gaugeY + bigRowheight / 2;
 
-  const int sunX = gaugeX + gaugeWidth + 16;
-  const int sunY = gaugeY + gaugeHeight / 2;
+  // sun
   display.fillRect(sunX, sunY + 5, 1, 2, SSD1306_WHITE); // ray bottom
   display.fillRect(sunX, sunY - 6, 1, 2, SSD1306_WHITE); // ray top
   display.fillRect(sunX - 6, sunY, 2, 1, SSD1306_WHITE); // ray left
@@ -71,20 +94,33 @@ void drawBatteryAddSolarInput(const SolarSnapshot& snapshot) {
   display.fillCircle(sunX, sunY, 3, SSD1306_WHITE);
 
   display.setTextSize(2);
-  display.setCursor(77, 0);
+  display.setCursor(30, 0);
   display.print(snapshot.panelPower, 0);
   display.println("W");
 
+
+  // battery gauge
+  display.drawRect(gaugeX, gaugeY, gaugeWidth, bigRowheight, SSD1306_WHITE);
+  display.fillRect(gaugeX + gaugeWidth, gaugeY + 4, 3, 6, SSD1306_WHITE);
+  const int fillWidth = (gaugeWidth - 4) * percent / 100;
+  if (fillWidth > 0) {
+    display.fillRect(gaugeX + 2, gaugeY + 2, fillWidth, bigRowheight - 4,
+                     SSD1306_WHITE);
+  }
+
   display.setTextSize(2);
+  display.print("     ");
   display.print(percent);
-  display.print("% " );
+  display.println("% " );
+
+  // additional battery info
   display.setTextSize(1);
   display.print(snapshot.batteryVoltage, 2);
-  display.println("V ");
-  display.print("         ");
+  display.print("V ");
   display.print(snapshot.batteryCurrent, 2);
   display.println("A");
 
+  // the rest
   display.setTextSize(1);
   display.print("State: ");
   display.print(snapshot.chargerState);
