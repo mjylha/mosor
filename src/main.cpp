@@ -225,6 +225,11 @@ void setup() {
   if (!solar.begin()) {
     Serial.println("Failed to initialize solar provider.");
   }
+
+  WiFi.onEvent([](WiFiEvent_t event) {
+    Serial.printf("WiFi event: %d, status:%d\n", (int)event, WiFi.status());
+  });
+
 }
 
 void loop() {
