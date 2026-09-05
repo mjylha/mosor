@@ -93,8 +93,30 @@ void drawBatteryAddSolarInput(const SolarSnapshot& snapshot) {
   display.fillRect(sunX + 5, sunY, 2, 1, SSD1306_WHITE); // ray right
   display.fillCircle(sunX, sunY, 3, SSD1306_WHITE);
 
+  // Solar energy flow from the sun to the panel.
+  constexpr int panelX = 32;
+  constexpr int panelY = 2;
+  constexpr int panelWidth = 7;
+  constexpr int panelHeight = 12;
+  display.drawRect(panelX, panelY, panelWidth, panelHeight, SSD1306_WHITE);
+  display.drawLine(panelX + 3, panelY, panelX + 3, panelY + panelHeight - 1,
+                   SSD1306_WHITE);
+  display.drawLine(panelX + 1, panelY + 4, panelX + panelWidth - 2,
+                   panelY + 4, SSD1306_WHITE);
+  display.drawLine(panelX + 1, panelY + 8, panelX + panelWidth - 2,
+                   panelY + 8, SSD1306_WHITE);
+
+  if ((millis() / 500) % 2 == 0) {
+    constexpr int arrowY = 5;
+    display.drawLine(sunX + 9, arrowY, panelX - 3, arrowY, SSD1306_WHITE);
+    display.drawLine(panelX - 3, arrowY, panelX - 6, arrowY - 2,
+                     SSD1306_WHITE);
+    display.drawLine(panelX - 3, arrowY, panelX - 6, arrowY + 2,
+                     SSD1306_WHITE);
+  }
+
   display.setTextSize(2);
-  display.setCursor(30, 0);
+  display.setCursor(56, 0);
   display.print(snapshot.panelPower, 0);
   display.println("W");
 
@@ -109,7 +131,7 @@ void drawBatteryAddSolarInput(const SolarSnapshot& snapshot) {
   }
 
   display.setTextSize(2);
-  display.print("     ");
+  display.setCursor(56, 0);
   display.print(percent);
   display.println("% " );
 
