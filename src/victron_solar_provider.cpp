@@ -11,6 +11,9 @@ bool VictronSolarProvider::begin() {
     return false;
   }
   victron_.setCallback(onData);
+  // Increase minimum processing interval to reduce BLE processing frequency
+  // and avoid any risk of overloading the Victron device.
+  victron_.setMinInterval(2000); // 2000 ms == 2 seconds
 
   configured_ = victron_.addDevice(
       MOSOR_VICTRON_DEVICE_NAME,
