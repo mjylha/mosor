@@ -128,10 +128,6 @@ void drawBatteryAddSolarInput(const SolarSnapshot& snapshot, bool networkProblem
   constexpr int gaugeWidth = 50;
   const int gaugeY = bigRowheight + 2;
   
-
-  //const int sunX = gaugeX + gaugeWidth + 18;
-  //const int sunY = gaugeY + bigRowheight / 2;
-
   // sun
   display.fillRect(sunX, sunY + 5, 1, 2, SSD1306_WHITE); // ray bottom
   display.fillRect(sunX, sunY - 6, 1, 2, SSD1306_WHITE); // ray top
@@ -206,6 +202,8 @@ void drawBatteryAddSolarInput(const SolarSnapshot& snapshot, bool networkProblem
     display.print((millis() - snapshot.updatedAt) / 1000);
     display.println(" s");
   }
+
+  // burn-in prevention
   const uint32_t now = millis();
   if (now - lastPixelShift >= pixelShiftInterval) {
     lastPixelShift = now;
@@ -213,13 +211,6 @@ void drawBatteryAddSolarInput(const SolarSnapshot& snapshot, bool networkProblem
     shiftDisplayBuffer(shift, shift);
   }
   display.display();
-
-  
-  
-  //display.println("%");
-  //display.setCursor(60, 9);
-  //display.print(snapshot.batteryVoltage, 1);
-  //display.print("V");
 }
 
 
