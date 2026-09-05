@@ -9,4 +9,4 @@ void displayBegin();
 void displayMaintain();
 
 /** Render display with solar and battery data */
-void displayShow(const SolarSnapshot& snapshot);
+void displayShow(const SolarSnapshot& snapshot, bool networkProblem);

@@ -9,3 +9,6 @@ void mqttUpdate();
 
 /** Publish solar snapshot to MQTT broker */
 void mqttPublish(const SolarSnapshot& snapshot);
+
+/** Report whether enabled Wi-Fi/MQTT connectivity is currently unavailable. */
+bool mqttNetworkProblem();

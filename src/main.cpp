@@ -31,13 +31,14 @@ void loop() {
 
   SolarSnapshot snapshot;
   if (solar.latest(snapshot)) {
+    const bool networkProblem = mqttNetworkProblem();
     Serial.printf("Solar: %.2fV %.2fA %.0fW state:%u status:%u\n",
                   snapshot.batteryVoltage,
                   snapshot.batteryCurrent,
                   snapshot.panelPower,
                   snapshot.chargerState,
                   static_cast<unsigned>(snapshot.status));
-    displayShow(snapshot);
+    displayShow(snapshot, networkProblem);
     mqttPublish(snapshot);
   }
 

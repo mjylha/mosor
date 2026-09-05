@@ -149,3 +149,12 @@ void mqttPublish(const SolarSnapshot& snapshot) {
     Serial.println("Failed to publish SolarSnapshot.");
   }
 }
+
+bool mqttNetworkProblem() {
+  if (!enabled(MQTT_ENABLED)) {
+    return false;
+  }
+
+  return !mqttReady || WiFi.status() != WL_CONNECTED ||
+         !mqttClient.connected();
+}

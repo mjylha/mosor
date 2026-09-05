@@ -71,7 +71,7 @@ uint8_t estimatedBatteryPercent(float voltage) {
 }
 
 
-void drawBatteryAddSolarInput(const SolarSnapshot& snapshot) {
+void drawBatteryAddSolarInput(const SolarSnapshot& snapshot, bool networkProblem) {
   const uint8_t percent = estimatedBatteryPercent(snapshot.batteryVoltage);
   
   constexpr int bigRowheight = 14;
@@ -120,7 +120,7 @@ void drawBatteryAddSolarInput(const SolarSnapshot& snapshot) {
   }
 
   display.setTextSize(2);
-  display.setCursor(57, 0);
+  display.print("     ");
   display.print(snapshot.panelPower, 0);
   display.println("W");
 
@@ -152,10 +152,14 @@ void drawBatteryAddSolarInput(const SolarSnapshot& snapshot) {
   display.print(snapshot.chargerState);
   display.print(" Err: ");
   display.println(snapshot.errorCode);
-  display.print(statusName(snapshot.status));
-  display.print(" ");
-  display.print((millis() - snapshot.updatedAt) / 1000);
-  display.println(" s");
+  if (networkProblem) {
+    display.println("Network problem");
+  } else {
+    display.print(statusName(snapshot.status));
+    display.print(" ");
+    display.print((millis() - snapshot.updatedAt) / 1000);
+    display.println(" s");
+  }
   display.display();
 
   
@@ -212,13 +216,13 @@ void displayMaintain() {
   }
 }
 
-void displayShow(const SolarSnapshot& snapshot) {
+void displayShow(const SolarSnapshot& snapshot, bool networkProblem) {
   if (!displayReady) {
     return;
   }
 
   display.clearDisplay();
   display.setCursor(0, 0);
-  drawBatteryAddSolarInput(snapshot);
+  drawBatteryAddSolarInput(snapshot, networkProblem);
   
 }
