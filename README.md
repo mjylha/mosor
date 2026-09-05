@@ -32,6 +32,19 @@ The display shows battery voltage, battery current, panel power, charger state,
 error code, data status, and the age of the latest reading. If the OLED is not
 connected, the firmware continues to report readings over serial.
 
+At startup, the firmware checks whether an I2C device acknowledges at `0x3C`.
+`No I2C device acknowledged` usually indicates a power, ground, SDA/SCL,
+connector, address-selection, or failed-module problem. If the address
+acknowledges but SSD1306 initialization fails, check that the module is really
+an SSD1306-compatible 128x64 display.
+
+For a black display, first power the module from 3.3 V, verify common ground
+and the GPIO 21/22 connections, and inspect the header and solder joints. A
+replacement display working on the same board, wiring, firmware, and supply
+is strong evidence that the original module failed. If the original still
+does not acknowledge at `0x3C` after those checks, software cannot repair the
+module; replacement is the practical remedy.
+
 When connected to the real SmartSolar device, build the Victron adapter
 environment:
 

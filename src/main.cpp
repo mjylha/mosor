@@ -45,6 +45,11 @@ const char* statusName(SolarDataStatus status) {
   }
 }
 
+bool i2cDevicePresent(uint8_t address) {
+  Wire.beginTransmission(address);
+  return Wire.endTransmission() == 0;
+}
+
 void showSnapshot(const SolarSnapshot& snapshot) {
   display.clearDisplay();
   display.setCursor(0, 0);
@@ -211,15 +216,20 @@ void setup() {
   configureMqtt();
 
   Wire.begin(i2cSda, i2cScl);
-  displayReady = display.begin(SSD1306_SWITCHCAPVCC, displayAddress);
-  if (!displayReady) {
-    Serial.println("Failed to initialize OLED display.");
+  if (!i2cDevicePresent(displayAddress)) {
+    Serial.printf("No I2C device acknowledged at OLED address 0x%02X.\n",
+                  displayAddress);
   } else {
-    display.clearDisplay();
-    display.setTextSize(1);
-    display.setTextColor(SSD1306_WHITE);
-    display.display();
-    Serial.println("OLED display initialized.");
+    displayReady = display.begin(SSD1306_SWITCHCAPVCC, displayAddress);
+    if (!displayReady) {
+      Serial.println("OLED controller acknowledged, but SSD1306 initialization failed.");
+    } else {
+      display.clearDisplay();
+      display.setTextSize(1);
+      display.setTextColor(SSD1306_WHITE);
+      display.display();
+      Serial.println("OLED display initialized.");
+    }
   }
 
   if (!solar.begin()) {

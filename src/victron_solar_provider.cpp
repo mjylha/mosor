@@ -26,8 +26,7 @@ bool VictronSolarProvider::begin() {
 void VictronSolarProvider::update() {
   // The BLE library receives advertisements through its callback.
   victron_.loop();
-  if (snapshot_.status == SolarDataStatus::Fresh &&
-      millis() - snapshot_.updatedAt > 10000) {
+  if (snapshot_.status == SolarDataStatus::Fresh &&   millis() - snapshot_.updatedAt > 10000) {
     snapshot_.status = SolarDataStatus::Stale;
   }
 }
